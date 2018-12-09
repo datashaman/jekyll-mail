@@ -2,8 +2,7 @@
 
 $VERBOSE = nil
 
-require "simplecov"
-require "minitest/filecontent"
 require "minitest/reporters"
+require "simplecov"
 
 Minitest::Reporters.use!

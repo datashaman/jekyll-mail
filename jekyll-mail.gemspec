@@ -16,7 +16,9 @@ Gem::Specification.new do |s|
   ]
   s.require_paths = ["lib"]
 
+  s.add_runtime_dependency "dotenv", "~> 2.5", ">= 2.5.0"
   s.add_runtime_dependency "mail", "~> 2.5", ">= 2.5.5"
+  s.add_runtime_dependency "mail-gpg", "~> 0.2"
   s.add_runtime_dependency "ruby-oembed", "~> 0.10"
 
   s.add_development_dependency "jekyll", "~> 3.6", ">= 3.6.3"

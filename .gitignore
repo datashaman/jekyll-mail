@@ -1,6 +1,8 @@
 /.bundle/
 /coverage/
+/.env.local
 /failure_*/
 /*.gem
 /Gemfile.lock
+/jekyll-mail.log
 /vendor/

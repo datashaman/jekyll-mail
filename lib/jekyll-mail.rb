@@ -3,9 +3,24 @@
 require "rubygems"
 require "bundler/setup"
 
+require "dotenv"
+require "logger"
 require "mail"
+require "mail-gpg"
 require "oembed"
 require "yaml"
+
+env = ENV['JEKYLL_ENV']
+
+files = []
+
+files.push(".env.local") if env != "test"
+files.push(".env.#{env}") unless env.nil?
+files.push(".env")
+
+Dotenv.load(*files)
+
+$LOG = Logger.new("jekyll-mail.log")
 
 module Jekyll
   module Mail
@@ -44,15 +59,21 @@ module Jekyll
       end
 
       def extract_body(mail)
-        if mail.multipart?
-          index = mail.parts.index do |part|
-            part.content_type.start_with?("text/plain", "text/html", "text/markdown")
-          end
+        parts = mail.parts
 
-          return mail.parts[index].decoded unless index.nil?
+        index = parts.index do |part|
+          part.content_type.start_with?("multipart/mixed")
         end
 
-        mail.decoded
+        unless index.nil?
+          parts = parts[index].parts
+        end
+
+        index = parts.index do |part|
+          part.content_type.start_with?("text/plain", "text/html", "text/markdown")
+        end
+
+        parts[index].decoded unless index.nil?
       end
 
       def extract_embed(body)
@@ -116,14 +137,31 @@ module Jekyll
         (0...8).map { rand(97..122).chr }.join
       end
 
+      def verify_signature(mail)
+        return false if mail.encrypted? or !mail.signed?
+
+        verified = mail.verify
+        return false unless verified.signature_valid?
+
+        allowed = ENV['GPG_ALLOWED'].split(',')
+
+        index = verified.signatures.index do |sig|
+          allowed.include?(sig.fpr)
+        end
+
+        return !index.nil?
+      end
+
       def import(content)
         mail = ::Mail.read_from_string(content)
+        return unless mail.multipart? and verify_signature(mail)
 
         title_slug = extract_title_slug(mail)
         post_slug = "#{mail.date.to_date}-#{title_slug}"
 
-        body = extract_body(mail)
         images = extract_images(mail, post_slug)
+
+        body = extract_body(mail)
         embed = extract_embed(body)
 
         write_post(mail, post_slug, body, images, embed)
