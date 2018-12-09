@@ -1,0 +1,9 @@
+require: rubocop-jekyll
+
+inherit_gem:
+  rubocop-jekyll: .rubocop.yml
+
+AllCops:
+  DisplayCopNames: true
+  DisplayStyleGuide: true
+  TargetRubyVersion: "2.2"
