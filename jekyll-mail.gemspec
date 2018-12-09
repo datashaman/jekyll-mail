@@ -27,4 +27,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rubocop-jekyll", "~> 0.4.0"
   s.add_development_dependency "simplecov", "~> 0.16"
   s.add_development_dependency "timecop", "~> 0.9"
+  s.add_development_dependency "travis", "~> 1.8"
 end
