@@ -6,3 +6,5 @@ require "minitest/pride"
 require "minitest/reporters"
 
 Minitest::Reporters.use!
+
+$VERBOSE = nil
