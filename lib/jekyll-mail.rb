@@ -18,10 +18,10 @@ module Jekyll
         OEmbed::Providers.register_all
       end
 
-      def extract_images(attachments, post_dir)
+      def extract_images(mail, post_dir)
         images = []
 
-        attachments.each do |attachment|
+        mail.attachments.each do |attachment|
           next unless attachment.content_type.start_with?("image/")
 
           filename = File.basename(attachment.filename)
@@ -46,25 +46,25 @@ module Jekyll
             part.content_type.start_with?("text/plain", "text/html", "text/markdown")
           end
 
-          mail.parts[index] unless index.nil?
-        else
-          mail.decoded
+          return mail.parts[index] unless index.nil?
         end
+
+        mail.decoded
       end
 
       def extract_embed(body)
         match = %r!
-          (https?:\/\/)?                  # optional protocol
+          (https?:\/\/)?                  # optional protocol prefix
           (www\.)?                        # optional www prefix
           [-a-zA-Z0-9@:%._\+~#=]{2,256}   # hostname
           \.[a-z]{2,6}                    # domain suffix
-          \b([-a-zA-Z0-9@:%_\+.~#?&\/=]*) # option query parameters
+          \b([-a-zA-Z0-9@:%_\+.~#?&\/=]*) # optional parameters and anchor
         !x.match(body)
 
         if match
           resource = OEmbed::Providers.get(match[0])
 
-          if resource
+          unless resource.nil?
             "## <a href=\"#{resource.provider_url}\">#{resource.provider_name}</a>" \
             "<a href=\"#{resource.author_url}\">#{resource.author_name}</a>\n" \
             "### <a href=\"#{resource.request_url}\">#{resource.title}</a>\n" \
@@ -96,10 +96,7 @@ module Jekyll
       end
 
       def extract_title_slug(mail)
-        if mail.subject
-          subject = mail.subject
-          return subject.downcase.strip.tr(" ", "-").gsub(%r![^\w-]!, "")
-        end
+        return mail.subject.downcase.strip.tr(" ", "-").gsub(%r![^\w-]!, "") if mail.subject
 
         (0...8).map { rand(97..123).chr }.join
       end
@@ -113,8 +110,8 @@ module Jekyll
         post_dir = "#{@site}#{post_path}"
         FileUtils.mkdir_p(post_dir, :mode => DIR_MODE)
 
-        images = extract_images(mail.attachments, post_path)
         body = extract_body(mail)
+        images = extract_images(mail, post_path)
         embed = extract_embed(body)
         body += "\n\n#{embed}" unless embed.nil?
 
