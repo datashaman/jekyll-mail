@@ -19,7 +19,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "mail", "~> 2.5", ">= 2.5.5"
   s.add_runtime_dependency "ruby-oembed", "~> 0.10"
 
-  s.add_development_dependency "bundler", "~> 1.16"
   s.add_development_dependency "jekyll", "~> 3.6", ">= 3.6.3"
   s.add_development_dependency "minitest", "~> 5.11"
   s.add_development_dependency "minitest-filecontent", "~> 0.1"
