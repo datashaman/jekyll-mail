@@ -18,7 +18,12 @@ module Jekyll
         OEmbed::Providers.register_all
       end
 
-      def extract_images(mail, post_dir)
+      def extract_images(mail, post_slug)
+        post_path = "/posts/#{post_slug}"
+        post_dir = "#{@site}#{post_path}"
+
+        FileUtils.mkdir_p(post_dir, :mode => DIR_MODE)
+
         images = []
 
         mail.attachments.each do |attachment|
@@ -106,12 +111,9 @@ module Jekyll
 
         title_slug = extract_title_slug(mail)
         post_slug = "#{mail.date.to_date}-#{title_slug}"
-        post_path = "/posts/#{post_slug}"
-        post_dir = "#{@site}#{post_path}"
-        FileUtils.mkdir_p(post_dir, :mode => DIR_MODE)
 
         body = extract_body(mail)
-        images = extract_images(mail, post_path)
+        images = extract_images(mail, post_slug)
         embed = extract_embed(body)
         body += "\n\n#{embed}" unless embed.nil?
 
