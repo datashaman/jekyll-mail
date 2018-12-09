@@ -5,6 +5,7 @@ require "bundler/setup"
 
 require "mail"
 require "oembed"
+require "yaml"
 
 module Jekyll
   module Mail
@@ -31,15 +32,12 @@ module Jekyll
 
           filename = File.basename(attachment.filename)
 
-          begin
-            File.open("#{post_dir}/#{filename}", "w+b") do |f|
-              f.write attachment.decoded
-            end
-            File.chmod(FILE_MODE, "#{post_dir}/#{filename}")
-            images.push "#{post_path}/#{filename}"
-          rescue StandardError => e
-            Jekyll.logger.error("Unable to save data for #{filename}: #{e.message}")
+          File.open("#{post_dir}/#{filename}", "w+b") do |f|
+            f.write attachment.decoded
           end
+
+          File.chmod(FILE_MODE, "#{post_dir}/#{filename}")
+          images.push "#{post_path}/#{filename}"
         end
 
         images
@@ -70,15 +68,27 @@ module Jekyll
           resource = OEmbed::Providers.get(match[0])
 
           unless resource.nil?
-            "## <a href=\"#{resource.provider_url}\">#{resource.provider_name}</a>" \
-            "<a href=\"#{resource.author_url}\">#{resource.author_name}</a>\n" \
-            "### <a href=\"#{resource.request_url}\">#{resource.title}</a>\n" \
-            "#{resource.html}"
+            {
+              "title" => resource.title,
+              "url" => resource.request_url,
+              "provider" => {
+                "name" => resource.provider_name,
+                "url" => resource.provider_url
+              },
+              "author" => {
+                "name" => resource.author_name,
+                "url" => resource.author_url,
+              },
+            }
           end
         end
       end
 
-      def write_post(mail, post_slug, body, images)
+      def strip_yaml_header(yaml)
+        yaml.sub(%r{^---\n}, '')
+      end
+
+      def write_post(mail, post_slug, body, images, embed)
         FileUtils.mkdir_p("#{@site}/_posts", :mode => DIR_MODE)
         post_file = "#{@site}/_posts/#{post_slug}.md"
 
@@ -88,10 +98,10 @@ module Jekyll
           f.write("date: #{mail.date.strftime("%F %H:%M:%S %z")}\n")
           f.write("title: #{mail.subject}\n") if mail.subject
           unless images.empty?
-            f.write("images:\n")
-            images.each do |image|
-              f.write("- #{image}\n")
-            end
+            f.write(strip_yaml_header(YAML.dump({'images' => images})))
+          end
+          unless embed.nil?
+            f.write(strip_yaml_header(YAML.dump({'embed' => embed})))
           end
           f.write("---\n")
           f.write("#{body}\n")
@@ -113,12 +123,10 @@ module Jekyll
         post_slug = "#{mail.date.to_date}-#{title_slug}"
 
         body = extract_body(mail)
-        puts body
         images = extract_images(mail, post_slug)
         embed = extract_embed(body)
-        body += "\n\n#{embed}" unless embed.nil?
 
-        write_post(mail, post_slug, body, images)
+        write_post(mail, post_slug, body, images, embed)
       end
     end
   end
