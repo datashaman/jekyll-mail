@@ -47,4 +47,22 @@ class MailTest < Minitest::Test
       assert_equal_filecontent("test/expected/<m>.md", File.read(filename))
     end
   end
+
+  def test_simple_with_images
+    mail = Mail.new do
+      from "from@example.com"
+      to "to@example.com"
+      subject "Subject"
+      body "Body"
+      add_file 'test/fixtures/image.png'
+      add_file 'test/fixtures/image.jpeg'
+    end
+
+    Dir.mktmpdir do |site|
+      Jekyll::Mail::Importer.new(site).import(mail.to_s)
+      filename = "#{site}/_posts/2018-01-01-subject.md"
+      assert File.exist?(filename)
+      assert_equal_filecontent("test/expected/<m>.md", File.read(filename))
+    end
+  end
 end
