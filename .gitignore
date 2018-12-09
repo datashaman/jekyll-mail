@@ -1,4 +1,5 @@
 /.bundle/
+/coverage/
 /failure_*/
 /*.gem
 /Gemfile.lock
