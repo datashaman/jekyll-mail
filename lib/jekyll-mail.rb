@@ -64,10 +64,11 @@ module Jekyll
         end
 
         match = %r!
-          (https?:\/\/)?(www\.)?
-          [-a-zA-Z0-9@:%._\+~#=]{2,256}
-          \.[a-z]{2,6}
-          \b([-a-zA-Z0-9@:%_\+.~#?&\/=]*)
+          (https?:\/\/)?                  # optional protocol
+          (www\.)?                        # optional www prefix
+          [-a-zA-Z0-9@:%._\+~#=]{2,256}   # hostname
+          \.[a-z]{2,6}                    # domain suffix
+          \b([-a-zA-Z0-9@:%_\+.~#?&\/=]*) # option query parameters
         !x.match(body)
 
         if match
