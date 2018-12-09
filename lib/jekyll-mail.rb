@@ -51,7 +51,7 @@ module Jekyll
             part.content_type.start_with?("text/plain", "text/html", "text/markdown")
           end
 
-          return mail.parts[index] unless index.nil?
+          return mail.parts[index].decoded unless index.nil?
         end
 
         mail.decoded
@@ -113,6 +113,7 @@ module Jekyll
         post_slug = "#{mail.date.to_date}-#{title_slug}"
 
         body = extract_body(mail)
+        puts body
         images = extract_images(mail, post_slug)
         embed = extract_embed(body)
         body += "\n\n#{embed}" unless embed.nil?
