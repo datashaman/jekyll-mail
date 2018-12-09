@@ -18,26 +18,10 @@ module Jekyll
         OEmbed::Providers.register_all
       end
 
-      def import(content)
-        mail = ::Mail.read_from_string(content)
-
-        if mail.subject
-          subject = mail.subject
-          title_slug = subject.downcase.strip.tr(" ", "-").gsub(%r![^\w-]!, "")
-        else
-          title_slug = (0...8).map { rand(97..123).chr }.join
-        end
-
-        post_slug = "#{mail.date.to_date}-#{title_slug}"
-
-        post_path = "/posts/#{post_slug}"
-        post_dir = "#{@site}#{post_path}"
-
-        FileUtils.mkdir_p(post_dir, :mode => DIR_MODE)
-
+      def extract_images(attachments, post_dir)
         images = []
 
-        mail.attachments.each do |attachment|
+        attachments.each do |attachment|
           next unless attachment.content_type.start_with?("image/")
 
           filename = File.basename(attachment.filename)
@@ -53,16 +37,22 @@ module Jekyll
           end
         end
 
+        images
+      end
+
+      def extract_body(mail)
         if mail.multipart?
           index = mail.parts.index do |part|
             part.content_type.start_with?("text/plain", "text/html", "text/markdown")
           end
 
-          body = mail.parts[index] unless index.nil?
+          mail.parts[index] unless index.nil?
         else
-          body = mail.decoded
+          mail.decoded
         end
+      end
 
+      def extract_embed(body)
         match = %r!
           (https?:\/\/)?                  # optional protocol
           (www\.)?                        # optional www prefix
@@ -75,14 +65,15 @@ module Jekyll
           resource = OEmbed::Providers.get(match[0])
 
           if resource
-            body += "\n\n" \
-                "## <a href=\"#{resource.provider_url}\">#{resource.provider_name}</a>" \
-                "<a href=\"#{resource.author_url}\">#{resource.author_name}</a>\n" \
-                "### <a href=\"#{resource.request_url}\">#{resource.title}</a>\n" \
-                "#{resource.html}"
+            "## <a href=\"#{resource.provider_url}\">#{resource.provider_name}</a>" \
+            "<a href=\"#{resource.author_url}\">#{resource.author_name}</a>\n" \
+            "### <a href=\"#{resource.request_url}\">#{resource.title}</a>\n" \
+            "#{resource.html}"
           end
         end
+      end
 
+      def write_post(mail, post_slug, body, images)
         FileUtils.mkdir_p("#{@site}/_posts", :mode => DIR_MODE)
         post_file = "#{@site}/_posts/#{post_slug}.md"
 
@@ -102,6 +93,32 @@ module Jekyll
         end
 
         File.chmod(FILE_MODE, post_file)
+      end
+
+      def extract_title_slug(mail)
+        if mail.subject
+          subject = mail.subject
+          return subject.downcase.strip.tr(" ", "-").gsub(%r![^\w-]!, "")
+        end
+
+        (0...8).map { rand(97..123).chr }.join
+      end
+
+      def import(content)
+        mail = ::Mail.read_from_string(content)
+
+        title_slug = extract_title_slug(mail)
+        post_slug = "#{mail.date.to_date}-#{title_slug}"
+        post_path = "/posts/#{post_slug}"
+        post_dir = "#{@site}#{post_path}"
+        FileUtils.mkdir_p(post_dir, :mode => DIR_MODE)
+
+        images = extract_images(mail.attachments, post_path)
+        body = extract_body(mail)
+        embed = extract_embed(body)
+        body += "\n\n#{embed}" unless embed.nil?
+
+        write_post(mail, post_slug, body, images)
       end
     end
   end
