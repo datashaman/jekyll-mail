@@ -14,11 +14,11 @@ Gem::Specification.new do |s|
     ]
     s.require_paths = ['lib']
 
-    s.add_dependency 'mail', '~> 0'
+    s.add_dependency 'mail', '~> 2.5', '>= 2.5.5'
     s.add_dependency 'ruby-oembed', '~> 0'
 
     s.add_development_dependency 'bundler', '~> 0'
-    s.add_development_dependency 'jekyll', '~> 0'
+    s.add_development_dependency 'jekyll', '~> 3.6', '>= 3.6.3'
     s.add_development_dependency 'rake', '~> 0'
     s.add_development_dependency 'minitest', '~> 0'
     s.add_development_dependency 'minitest-reporters', '~> 0'
