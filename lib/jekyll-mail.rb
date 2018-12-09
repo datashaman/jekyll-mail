@@ -86,7 +86,7 @@ module Jekyll
           f.write("---\n")
           f.write("layout: post\n")
           f.write("date: #{mail.date.strftime("%F %H:%M:%S %z")}\n")
-          f.write("title: #{mail.subject}\n")
+          f.write("title: #{mail.subject}\n") if mail.subject
           unless images.empty?
             f.write("images:\n")
             images.each do |image|
@@ -103,7 +103,7 @@ module Jekyll
       def extract_title_slug(mail)
         return mail.subject.downcase.strip.tr(" ", "-").gsub(%r![^\w-]!, "") if mail.subject
 
-        (0...8).map { rand(97..123).chr }.join
+        (0...8).map { rand(97..122).chr }.join
       end
 
       def import(content)

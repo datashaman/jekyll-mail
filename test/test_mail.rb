@@ -65,4 +65,19 @@ class MailTest < Minitest::Test
       assert_equal_filecontent("test/expected/<m>.md", File.read(filename))
     end
   end
+
+  def test_simple_without_subject
+    mail = Mail.new do
+      from "from@example.com"
+      to "to@example.com"
+      body "Body"
+    end
+
+    Dir.mktmpdir do |site|
+      Jekyll::Mail::Importer.new(site).import(mail.to_s)
+      files = Dir["#{site}/_posts/*"]
+      assert (/2018-01-01-[a-z]{8}/ =~ files[0])
+      assert_equal_filecontent("test/expected/<m>.md", File.read(files[0]))
+    end
+  end
 end
