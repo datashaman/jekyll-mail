@@ -14,13 +14,15 @@ Gem::Specification.new do |s|
     ]
     s.require_paths = ['lib']
 
-    s.add_dependency 'mail', '~> 2.5', '>= 2.5.5'
-    s.add_dependency 'ruby-oembed', '~> 0'
+    s.add_runtime_dependency 'mail', '~> 2.5', '>= 2.5.5'
+    s.add_runtime_dependency 'ruby-oembed', '~> 0.10'
 
-    s.add_development_dependency 'bundler', '~> 0'
+    s.add_development_dependency 'bundler', '~> 1.16'
     s.add_development_dependency 'jekyll', '~> 3.6', '>= 3.6.3'
-    s.add_development_dependency 'rake', '~> 0'
-    s.add_development_dependency 'minitest', '~> 0'
-    s.add_development_dependency 'minitest-reporters', '~> 0'
+    s.add_development_dependency 'minitest', '~> 5.11'
+    s.add_development_dependency 'minitest-filecontent', '~> 0.1'
+    s.add_development_dependency 'minitest-reporters', '~> 1.3'
+    s.add_development_dependency 'rake', '~> 12.3'
     s.add_development_dependency 'rubocop-jekyll', '~> 0.4.0'
+    s.add_development_dependency 'timecop', '~> 0.9'
 end

@@ -1,4 +1,5 @@
 /.bundle/
+/failure_*/
 /*.gem
 /Gemfile.lock
 /vendor/

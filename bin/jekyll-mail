@@ -3,7 +3,7 @@
 require 'jekyll-mail'
 
 if ARGV.length != 1
-    abort('Please specify the Jekyll site folder as the first parameter')
+  abort('Please specify the Jekyll site folder as the first parameter')
 end
 
 Jekyll::Mail::Importer.new(ARGV[0]).import(STDIN.read)
