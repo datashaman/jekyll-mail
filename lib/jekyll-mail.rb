@@ -82,12 +82,15 @@ module Jekyll
       end
 
       def extract_body(mail)
-        if mail.multipart?
-          body = extract_body_from_parts(mail.parts)
-          return body.decoded unless body.nil?
-        end
-
-        mail.decoded
+        decoded = if mail.multipart?
+                    body = extract_body_from_parts(mail.parts)
+                    body.decoded unless body.nil?
+                  else
+                    mail.decoded
+                    body = ::Mail::Gpg::InlineSignedMessage.strip_inline_signature(decoded)
+                    body = body["-----BEGIN PGP SIGNED MESSAGE-----\n\n".length..-1]
+                    body[0..-"\n-----END PGP SIGNED MESSAGE-----".length]
+                  end
       end
 
       def extract_embed(body)
@@ -162,7 +165,7 @@ module Jekyll
 
         verified = mail.verify
         unless verified.signature_valid?
-          $LOG.debug("Signature is not valid")
+          $LOG.warning("Signature is not valid")
           return false
         end
 
