@@ -59,21 +59,25 @@ module Jekyll
       end
 
       def extract_body(mail)
-        parts = mail.parts
+        if mail.multipart?
+          parts = mail.parts
 
-        index = parts.index do |part|
-          part.content_type.start_with?("multipart/mixed")
+          index = parts.index do |part|
+            part.content_type.start_with?("multipart/mixed")
+          end
+
+          unless index.nil?
+            parts = parts[index].parts
+          end
+
+          index = parts.index do |part|
+            part.content_type.start_with?("text/plain", "text/html", "text/markdown")
+          end
+
+          return parts[index].decoded unless index.nil?
         end
 
-        unless index.nil?
-          parts = parts[index].parts
-        end
-
-        index = parts.index do |part|
-          part.content_type.start_with?("text/plain", "text/html", "text/markdown")
-        end
-
-        parts[index].decoded unless index.nil?
+        mail.decoded
       end
 
       def extract_embed(body)
@@ -138,14 +142,26 @@ module Jekyll
       end
 
       def verify_signature(mail)
+        $LOG.debug("Encrypted: #{mail.encrypted?}, Signed: #{mail.signed?}")
+
         return false if mail.encrypted? or !mail.signed?
 
-        verified = mail.verify
-        return false unless verified.signature_valid?
+        if mail.multipart? and mail.parts.length == 1
+          verified = mail.verify
+        else
+          verified = mail.parts[0].verify
+	  $LOG.debug("Part: #{verified.parts[0].parts.map{|p|p.decoded}}")
+        end
+
+	unless verified.signature_valid?
+          $LOG.debug("Signature is not valid")
+          return false
+	end
 
         allowed = ENV['GPG_ALLOWED'].split(',')
 
         index = verified.signatures.index do |sig|
+          $LOG.debug("Checking #{sig.fpr} against #{allowed.join(',')}")
           allowed.include?(sig.fpr)
         end
 
@@ -153,8 +169,12 @@ module Jekyll
       end
 
       def import(content)
+        $LOG.debug("Content #{content}")
+
         mail = ::Mail.read_from_string(content)
-        return unless mail.multipart? and verify_signature(mail)
+	$LOG.debug("Mail #{mail.inspect}")
+
+        return unless verify_signature(mail)
 
         title_slug = extract_title_slug(mail)
         post_slug = "#{mail.date.to_date}-#{title_slug}"
