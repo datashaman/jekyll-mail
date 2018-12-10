@@ -58,15 +58,31 @@ module Jekyll
         images
       end
 
+      def has_body(part)
+        part.content_type.start_with?("text/plain", "text/html", "text/markdown")
+      end
+
       def extract_body(mail)
         if mail.multipart?
-          parts = mail.parts[0].parts[0].parts
+          parts = mail.parts
 
-          index = parts.index do |part|
-            part.content_type.start_with?("text/plain", "text/html", "text/markdown")
+          for outer in parts
+            if has_body(outer)
+              body = outer
+              break
+            end
+
+            index = outer.parts.index do |inner|
+              has_body(inner)
+            end
+
+            unless index.nil?
+              body = outer.parts[index]
+              break
+            end
           end
 
-          return parts[index].decoded unless index.nil?
+          return body.decoded unless body.nil?
         end
 
         mail.decoded
