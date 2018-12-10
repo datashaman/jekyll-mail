@@ -6,6 +6,7 @@ rvm:
     - 2.5
     - 2.6
 script:
+    - gpgconf --list-dir
     - source .env.test && echo "${GPG_PRIVATE_KEY}" | gpg --import -
     - source .env.test && echo "${GPG_PASSWORD}" | /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_FINGERPRINT}"
     - bundle exec rake test
