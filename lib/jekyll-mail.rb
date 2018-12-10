@@ -60,15 +60,7 @@ module Jekyll
 
       def extract_body(mail)
         if mail.multipart?
-          parts = mail.parts
-
-          index = parts.index do |part|
-            part.content_type.start_with?("multipart/mixed")
-          end
-
-          unless index.nil?
-            parts = parts[index].parts
-          end
+          parts = mail.parts[0].parts[0].parts
 
           index = parts.index do |part|
             part.content_type.start_with?("text/plain", "text/html", "text/markdown")
@@ -146,17 +138,11 @@ module Jekyll
 
         return false if mail.encrypted? or !mail.signed?
 
-        if mail.multipart? and mail.parts.length == 1
-          verified = mail.verify
-        else
-          verified = mail.parts[0].verify
-	  $LOG.debug("Part: #{verified.parts[0].parts.map{|p|p.decoded}}")
-        end
-
-	unless verified.signature_valid?
+        verified = mail.verify
+        unless verified.signature_valid?
           $LOG.debug("Signature is not valid")
           return false
-	end
+        end
 
         allowed = ENV['GPG_ALLOWED'].split(',')
 
@@ -172,7 +158,7 @@ module Jekyll
         $LOG.debug("Content #{content}")
 
         mail = ::Mail.read_from_string(content)
-	$LOG.debug("Mail #{mail.inspect}")
+        $LOG.debug("Mail #{mail.inspect}")
 
         return unless verify_signature(mail)
 
