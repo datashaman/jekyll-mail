@@ -62,26 +62,28 @@ module Jekyll
         part.content_type.start_with?("text/plain", "text/html", "text/markdown")
       end
 
+      def extract_body_from_parts(parts)
+        index = parts.index do |part|
+          has_body(part)
+        end
+
+        return parts[index] unless index.nil?
+
+        body = nil
+
+        parts.each do |part|
+          if part.multipart?
+            body = extract_body_from_parts(part.parts)
+            break unless body.nil?
+          end
+        end
+
+        body
+      end
+
       def extract_body(mail)
         if mail.multipart?
-          parts = mail.parts
-
-          for outer in parts
-            if has_body(outer)
-              body = outer
-              break
-            end
-
-            index = outer.parts.index do |inner|
-              has_body(inner)
-            end
-
-            unless index.nil?
-              body = outer.parts[index]
-              break
-            end
-          end
-
+          body = extract_body_from_parts(mail.parts)
           return body.decoded unless body.nil?
         end
 
@@ -89,7 +91,7 @@ module Jekyll
       end
 
       def extract_embed(body)
-        match = %r!
+        match_url = %r!
           (https?:\/\/)?                  # optional protocol prefix
           (www\.)?                        # optional www prefix
           [-a-zA-Z0-9@:%._\+~#=]{2,256}   # hostname
@@ -97,8 +99,12 @@ module Jekyll
           \b([-a-zA-Z0-9@:%_\+.~#?&\/=]*) # optional parameters and anchor
         !x.match(body)
 
-        if match
-          resource = OEmbed::Providers.get(match[0])
+        if match_url
+          url = match_url[0]
+          match_email = %r{\S+@\S+\.\S+}.match(url)
+          return if match_email
+
+          resource = OEmbed::Providers.get(url)
 
           unless resource.nil?
             {

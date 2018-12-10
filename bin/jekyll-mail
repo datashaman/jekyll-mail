@@ -2,8 +2,14 @@
 
 require 'jekyll-mail'
 
-if ARGV.length != 1
+if ARGV.length < 1
   abort('Please specify the Jekyll site folder as the first parameter')
 end
 
-Jekyll::Mail::Importer.new(ARGV[0]).import(STDIN.read)
+if ARGV.length == 2
+  content = File.read(ARGV[1])
+else
+  content = STDIN.read
+end
+
+Jekyll::Mail::Importer.new(ARGV[0]).import(content)
