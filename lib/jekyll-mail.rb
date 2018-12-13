@@ -83,15 +83,14 @@ module Jekyll
       end
 
       def extract_body(mail)
-        decoded = if mail.multipart?
-                    body = extract_body_from_parts(mail.parts)
-                    body.decoded unless body.nil?
-                  else
-                    mail.decoded
-                    body = ::Mail::Gpg::InlineSignedMessage.strip_inline_signature(decoded)
-                    body = body["-----BEGIN PGP SIGNED MESSAGE-----\n\n".length..-1]
-                    body[0..-"\n-----END PGP SIGNED MESSAGE-----".length]
-                  end
+        if mail.multipart?
+          body = extract_body_from_parts(mail.parts)
+          body.decoded unless body.nil?
+        else
+          body = ::Mail::Gpg::InlineSignedMessage.strip_inline_signature(mail.decoded)
+          body = body["-----BEGIN PGP SIGNED MESSAGE-----\n\n".length..-1]
+          body[0..-"\n-----END PGP SIGNED MESSAGE-----".length]
+        end
       end
 
       def extract_embed(body)
@@ -132,14 +131,21 @@ module Jekyll
       def write_post(mail, title, post_slug, body, images, embed)
         FileUtils.mkdir_p("#{@site}/_posts", :mode => DIR_MODE)
         post_file = "#{@site}/_posts/#{post_slug}.md"
+	$LOG.debug("Post file: #{post_file}")
+
+        front_matter = {
+          "layout" => "post",
+          "date" => mail.date.strftime("%F %H:%M:%S %z")
+        }
+
+        front_matter["title"] = title unless title.nil?
+        front_matter["images"] = images unless images.empty?
+        front_matter["embed"] = embed unless embed.nil?
+
+        $LOG.debug("Front matter: #{front_matter.inspect}")
 
         File.open(post_file, "w") do |f|
-          f.write("---\n")
-          f.write("layout: post\n")
-          f.write("date: #{mail.date.strftime("%F %H:%M:%S %z")}\n")
-          f.write("title: #{title}\n") unless title.nil?
-          f.write(strip_yaml_header(YAML.dump({'images' => images}))) unless images.empty?
-          f.write(strip_yaml_header(YAML.dump({'embed' => embed}))) unless embed.nil?
+	  f.write(YAML.dump(front_matter))
           f.write("---\n")
           f.write("#{body}\n")
         end
@@ -195,9 +201,7 @@ module Jekyll
                      end
 
         post_slug = "#{mail.date.to_date}-#{title_slug}"
-
         images = extract_images(mail, post_slug)
-
         write_post(mail, title, post_slug, body, images, embed)
       end
     end
