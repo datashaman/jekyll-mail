@@ -160,7 +160,7 @@ module Jekyll
 
         verified = mail.verify
         unless verified.signature_valid?
-          $LOG.warning("Signature is not valid")
+          $LOG.warn("Signature is not valid")
           return false
         end
 
